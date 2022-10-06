@@ -1,0 +1,21 @@
+#file {
+    border: 1px solid black;
+    width: 500px;
+    background-color: lightgreen;
+    alignment: center;
+}
+
+.submit {
+    border: 1px solid black;
+    width: 50px;
+    background-color: lightgreen;
+    alignment: center;
+}
+
+#head {
+    text-align: center;
+}
+
+#result {
+    text-align: center;
+}
