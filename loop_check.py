@@ -50,7 +50,7 @@ def spike(file_name):
         for i in number:
             file.write(str(i) + '\n')
 
-    dst_dir = r"D:\NETCIA\Data\10m\sample10"
+    dst_dir = "/home/downloads/results/"
     zip("static/result_spike/detect", dst_dir, "result_" + flag_name)
 
 
@@ -73,7 +73,7 @@ def rice(file_name):
         for i in number:
             file.write(str(i) + '\n')
 
-    dst_dir = r"D:\NETCIA\Data\10m\sample10"
+    dst_dir = "/home/downloads/results/"
     zip("static/result_rice/detect", dst_dir, "result_" + flag_name)
 
 
@@ -96,7 +96,7 @@ def seedling(file_name):
         for i in number:
             file.write(str(i) + '\n')
 
-    dst_dir = r"D:\NETCIA\Data\10m\sample10"
+    dst_dir = "/home/downloads/results/"
     zip("static/result_seedling/detect", dst_dir, "result_" + flag_name)
 
 
