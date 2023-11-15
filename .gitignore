@@ -1,0 +1,6 @@
+data_flask/
+index_result/
+static/
+upload_images/
+*.pt
+*.txt
