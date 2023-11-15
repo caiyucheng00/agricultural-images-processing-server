@@ -3,6 +3,7 @@
 # @Author:虚幻的元亨利贞
 # @Time: 2023-11-13 18:02
 #
+import os
 import time
 from FlaskServerUtils import *
 
@@ -31,17 +32,20 @@ def shifei(file_name):
 
 
 def spike(file_name):
-    base_path = os.path.dirname(__file__)  # 当前文件所在路径
-    update_dir()
-    source_image_path = file_name
-    destination_image_path = base_path + '/data_flask/images/' + file_name.split("/")[-1]
-    shutil.copy(source_image_path, destination_image_path)
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir("data_flask/flask_spike")  # 每次清空
+    unzip(file_name, "data_flask", "flask_spike")
 
-    n = yolo_detect(weights=ROOT / 'spike.pt')
-    number = n.item()
-    txt_name = "static/result/" + file_name.split("/")[-1].split(".")[0] + ".txt"
+    n = yolo_detect(weights=ROOT / 'spike.pt', source="data_flask/flask_spike", project="static/result_spike")
+    number = []
+    for tensor in n:
+        number.append(tensor.item())
+    txt_name = "static/result_spike/detect/" + flag_name + ".txt"
     with open(txt_name, 'w+') as file:
-        file.write(str(number))
+        for i in number:
+            file.write(str(i))
+
+    zip("static/result_spike/detect", r"D:\NETCIA\Data\10m\sample10", "result_" + flag_name)
 
 
 def rice(file_name):
@@ -69,7 +73,8 @@ def seedling(file_name):
     number = n.item()
     txt_name = "static/result/" + file_name.split("/")[-1].split(".")[0] + ".txt"
     with open(txt_name, 'w+') as file:
-        file.write(str(number))
+        for i in number:
+            file.write(str(i) + '\n')
 
 
 def phe(file_name):
@@ -135,7 +140,7 @@ def check_for_changes(filename):
             ## 取出更新内容
             if new_data_map:
                 for key, value in new_data_map.items():
-                    do_request(key, value)
+                    do_request(key, value)  ## 新数据
         else:
             print("文件没有新增行数")
 
