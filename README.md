@@ -1,0 +1,12 @@
+# agricultural-images-processing-server
+01 LAI
+02 NDVI
+03 EXG
+04 小麦倒伏
+05 水稻倒伏
+06 小麦施肥
+07 水稻施肥
+08 小麦穗数
+09 水稻穗数
+10 小麦苗数
+11 生育期
