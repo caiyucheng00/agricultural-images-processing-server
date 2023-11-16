@@ -4,3 +4,4 @@ static/
 upload_images/
 *.pt
 *.txt
+__pycache__/
