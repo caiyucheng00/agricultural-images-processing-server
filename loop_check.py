@@ -173,4 +173,4 @@ def check_for_changes(filename):
 
 if __name__ == '__main__':
     # 启动文件监控
-    check_for_changes('loop_check.txt')
+    check_for_changes('/root/Downloads/upload/upload.txt')

@@ -41,11 +41,15 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 
-@app.route('/')
+@app.route('/check')
 def loop_check():
     # 启动文件监控
     executor.submit(check_for_changes, 'loop_check.txt')
     return render_template('upload.html', filename='wait.png', folder='style')
+
+@app.route('/ai')
+def hello_world():
+    return render_template('ai.html', filename='none.png', folder='style')
 
 
 
