@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI助手模型</title>
+    <!-- <link rel="stylesheet" type="text/css" href="/static/style/upload.css"> -->
+</head>
+
+<body>
+<div id="head">
+    <h1 id="title">AI助手</h1>
+    <div id="left" style="width: 30%;float: left">
+    <p style="font-size: 24px" > 图像分类</p>
+    <form action="http://114.116.44.94:8090/imageClassifydemo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 物体检测</p>
+    <form action="http://114.116.44.94:8090/cropdemo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 图像分割</p>
+    <form action="http://114.116.44.94:65/segmentation _demo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 图像回归</p>
+    <form action="http://114.116.44.94:65/disease_demo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 场景识别</p>
+    <form action="http://114.116.44.94:8090/sceneClassifydemo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 叶龄识别</p>
+    <form action="http://114.116.44.94:8090/leafageClassifydemo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 虫害识别</p>
+    <form action="http://114.116.44.94:8090/insectdemo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+    <p style="font-size: 24px" > 草害识别</p>
+    <form action="http://114.116.44.94:8090/diseasedemo" enctype='multipart/form-data' method='POST'>
+        <input type="file" name="file" id="file"/>
+        <input type="submit" value="测试" class="submit"/>
+    </form>
+
+    </div>
+
+</div>
+<!--    展示结果图-->
+    <div id="result" style="float: left;margin-top: 10%;margin-left: 5%;">
+    <h1>{{des}}</h1>
+    <img src="/static/{{ folder }}/{{ filename }}" width="400" height="400"/>
+    </div>
+</body>
+</html>

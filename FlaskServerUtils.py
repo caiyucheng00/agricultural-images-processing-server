@@ -3,6 +3,7 @@
 # @Author:虚幻的元亨利贞
 # @Time: 2022-04-24 21:17
 #
+import os
 import shutil
 from urllib import request as url_request
 from detect import *
@@ -19,20 +20,63 @@ def allowed_file(filename):
 
 
 # detect.py
-def yolo_detect(weights):
+def yolo_detect(weights, source, project):
     opt = parse_opt()
     opt.weights = weights
+    opt.source = source
+    opt.project = project
     print_args(FILE.stem, opt)
     n = main(opt)
     return n
 
 
 # 更新目录
-def update_dir():
-    shutil.rmtree('./data_flask/images')
-    ## shutil.rmtree('./static/detect')
-    os.mkdir('./data_flask/images')
-    ## os.mkdir('./static/detect')
+def update_dir(dir):
+    shutil.rmtree(dir)
+    os.mkdir(dir)
+
+
+# 解压缩
+def unzip(compressed_file_path, extracted_folder_path, type_name):
+    # 压缩文件路径
+    compressed_file_path = compressed_file_path
+    # 解压缩后的目标文件夹路径
+    extracted_folder_path = extracted_folder_path
+    # 确保目标文件夹存在，如果不存在则创建
+    Path(extracted_folder_path).mkdir(parents=True, exist_ok=True)
+    # 解压缩文件到目标文件夹
+    shutil.unpack_archive(compressed_file_path, extracted_folder_path)
+
+    origin_name = compressed_file_path.split(os.sep)[-1].split(".")[0]
+    source_folder_path = extracted_folder_path + os.sep + origin_name
+    target_folder_path = extracted_folder_path + os.sep + type_name
+    # 确保目标文件夹存在，如果不存在则创建
+    Path(target_folder_path).mkdir(parents=True, exist_ok=True)
+    # 遍历源文件夹中的文件和子文件夹
+    for root, dirs, files in os.walk(source_folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            # 剪切文件到目标文件夹
+            shutil.move(file_path, target_folder_path)
+
+    # 删除源文件夹
+    os.rmdir(source_folder_path)
+
+
+##压缩
+def zip(detect_path, destination_folder, zip_file_name):
+    # 定义要压缩的文件夹路径
+    detect_path = detect_path
+    # 定义目标文件夹路径
+    destination_folder = destination_folder
+    # 定义zip文件的名称和路径
+    zip_file_name = zip_file_name
+    zip_file_path = os.path.join(destination_folder, zip_file_name)
+
+    # 使用shutil库的make_archive方法压缩文件夹
+    shutil.make_archive(zip_file_path, 'zip', detect_path)
+    # 如果要删除原始文件夹内容，可以使用shutil.rmtree
+    shutil.rmtree(detect_path)
 
 
 # 根据url下载图片
