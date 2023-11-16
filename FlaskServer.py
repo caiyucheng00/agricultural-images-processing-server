@@ -21,6 +21,9 @@ import numpy as np
 
 from loop_check import check_for_changes
 
+from concurrent.futures import ThreadPoolExecutor
+executor = ThreadPoolExecutor()
+
 app = Flask(__name__)
 # 设置静态文件缓存过期时间
 app.send_file_max_age_default = timedelta(seconds=1)
@@ -38,10 +41,16 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 
-@app.route('/')
+@app.route('/check')
 def loop_check():
     # 启动文件监控
-    check_for_changes('loop_check.txt')
+    executor.submit(check_for_changes, 'loop_check.txt')
+    return render_template('upload.html', filename='wait.png', folder='style')
+
+@app.route('/ai')
+def hello_world():
+    return render_template('ai.html', filename='none.png', folder='style')
+
 
 
 ## 生育期检测 #################################################################################################
