@@ -30,6 +30,15 @@ def yolo_detect(weights, source, project):
     return n
 
 
+# detect.py
+def yolo_detect(weights):
+    opt = parse_opt()
+    opt.weights = weights
+    print_args(FILE.stem, opt)
+    n = main(opt)
+    return n
+
+
 # 更新目录
 def update_dir(dir):
     shutil.rmtree(dir)
