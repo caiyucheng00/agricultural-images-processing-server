@@ -141,7 +141,8 @@ def spike():
         if not (file and allowed_file(file.filename)):
             return jsonify({"status": 10001, "message": "wrong image type"})
 
-        update_dir()
+        Path('data_flask/images').mkdir(parents=True, exist_ok=True)
+        update_dir('data_flask/images')
         base_path = os.path.dirname(__file__)  # 当前文件所在路径
         upload_path = os.path.join(base_path, 'data_flask/images',
                                    secure_filename(file.filename))  # 一定要先创建该文件夹，不然会提示没有该路径
@@ -175,7 +176,8 @@ def rice():
         if not (file and allowed_file(file.filename)):
             return jsonify({"status": 10001, "message": "wrong image type"})
 
-        update_dir()
+        Path('data_flask/images').mkdir(parents=True, exist_ok=True)
+        update_dir('data_flask/images')
         base_path = os.path.dirname(__file__)  # 当前文件所在路径
         upload_path = os.path.join(base_path, 'data_flask/images',
                                    secure_filename(file.filename))  # 一定要先创建该文件夹，不然会提示没有该路径
@@ -208,7 +210,8 @@ def seedling():
         if not (file and allowed_file(file.filename)):
             return jsonify({"status": 10001, "message": "wrong image type"})
 
-        update_dir()
+        Path('data_flask/images').mkdir(parents=True, exist_ok=True)
+        update_dir('data_flask/images')
         base_path = os.path.dirname(__file__)  # 当前文件所在路径
         upload_path = os.path.join(base_path, 'data_flask/images',
                                    secure_filename(file.filename))  # 一定要先创建该文件夹，不然会提示没有该路径
