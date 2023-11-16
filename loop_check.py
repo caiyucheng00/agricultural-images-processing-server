@@ -8,7 +8,10 @@ import time
 from FlaskServerUtils import *
 
 data_map = {}
-
+CHECK_FILE = '/root/Downloads/upload/upload.txt'
+RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
+RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
+RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
 
 ##======================================================================================================================
 def LAI(file_name):
@@ -50,7 +53,7 @@ def spike(file_name):
         for i in number:
             file.write(str(i) + '\n')
 
-    dst_dir = "/home/downloads/results/"
+    dst_dir = RESULT_SPIKE
     zip("static/result_spike/detect", dst_dir, "result_" + flag_name)
 
 
@@ -73,7 +76,7 @@ def rice(file_name):
         for i in number:
             file.write(str(i) + '\n')
 
-    dst_dir = "/home/downloads/results/"
+    dst_dir = RESULT_RICE
     zip("static/result_rice/detect", dst_dir, "result_" + flag_name)
 
 
@@ -96,7 +99,7 @@ def seedling(file_name):
         for i in number:
             file.write(str(i) + '\n')
 
-    dst_dir = "/home/downloads/results/"
+    dst_dir = RESULT_SEEDLING
     zip("static/result_seedling/detect", dst_dir, "result_" + flag_name)
 
 
@@ -173,4 +176,4 @@ def check_for_changes(filename):
 
 if __name__ == '__main__':
     # 启动文件监控
-    check_for_changes('/root/Downloads/upload/upload.txt')
+    check_for_changes(CHECK_FILE)

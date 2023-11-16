@@ -20,20 +20,11 @@ def allowed_file(filename):
 
 
 # detect.py
-def yolo_detect(weights, source, project):
+def yolo_detect(weights, source="data_flask/images", project='static/result'):
     opt = parse_opt()
     opt.weights = weights
     opt.source = source
     opt.project = project
-    print_args(FILE.stem, opt)
-    n = main(opt)
-    return n
-
-
-# detect.py
-def yolo_detect(weights):
-    opt = parse_opt()
-    opt.weights = weights
     print_args(FILE.stem, opt)
     n = main(opt)
     return n
