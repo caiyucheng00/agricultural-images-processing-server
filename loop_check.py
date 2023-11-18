@@ -9,13 +9,13 @@ import time
 from FlaskServerUtils import *
 
 data_map = {}
-CHECK_FILE = 'loop_check.txt'
-RESULT_LAI = 'E:/baima/'
-RESULT_EXG = 'E:/baima/'
-RESULT_xiaomaidaofu = 'E:/baima/'
-RESULT_shuidaodaofu = 'E:/baima/'
-RESULT_xiaomaishifei = 'E:/baima/'
-RESULT_shuidaoshifei = 'E:/baima/'
+CHECK_FILE = '/root/Downloads/upload/upload.txt'
+RESULT_LAI = '/root/Downloads/result/LAI/'
+RESULT_EXG = '/root/Downloads/result/EXG/'
+RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
+RESULT_shuidaodaofu = '/root/Downloads/result/shuidaodaofu/'
+RESULT_xiaomaishifei = '/root/Downloads/result/xiaomaishifei/'
+RESULT_shuidaoshifei = '/root/Downloads/result/shuidaoshifei/'
 RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
 RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
 RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
