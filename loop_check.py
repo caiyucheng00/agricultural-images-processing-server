@@ -4,18 +4,56 @@
 # @Time: 2023-11-13 18:02
 #
 import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import time
 from FlaskServerUtils import *
 
 data_map = {}
-CHECK_FILE = '/root/Downloads/upload/upload.txt'
+CHECK_FILE = 'loop_check.txt'
 RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
 RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
 RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
 
 ##======================================================================================================================
 def LAI(file_name):
-    pass
+    source = "data_flask/flask_LAI"
+    project = "static/result_LAI/index"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    update_dir(source)  # 每次清空
+    unzip(file_name, "data_flask", "flask_LAI")
+
+    for img in os.listdir(source):
+        image = cv2.imread(source + os.sep + img, cv2.IMREAD_COLOR)
+        # 转换成int型，不然会导致数据溢出
+        img1 = np.array(image, dtype='int')
+        # 超绿灰度图
+        r, g, b = cv2.split(img1)
+        ExR = 1.4 * r - g
+        LAI = 4.297 * np.exp(-6.09 * 1.4 * r - g)
+        # 确保LAI中的值在0~255之间
+        LAI = np.clip(LAI, 0, 255)
+        LAI = np.array(LAI, dtype='uint8')  # 重新转换成uint8类型
+
+        plt.subplot(132), plt.imshow(cv2.cvtColor(LAI, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        LAI_path = project + os.sep + "result_" + str(img)
+        plt.savefig(LAI_path, dpi=800, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        img2 = plt.imread(LAI_path)
+        # 直接读入的img为3通道，这里用直接赋值的方法转为单通道
+        img_s2 = img2[:, :, 0]
+        sc2 = plt.imshow(img_s2)
+        sc2.set_cmap('nipy_spectral')  # 这里可以设置多种模式
+        plt.colorbar()  # 显示色度条
+        # plt.rcParams['axes.unicode_minus'] = False
+
+        plt.title('LAI')
+        plt.axis('off')
+        plt.savefig(LAI_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
+        plt.close()
+
 
 
 def NDVI(file_name):
@@ -109,7 +147,7 @@ def phe(file_name):
 
 def do_request(file_name, flag):
     if flag == "01":
-        pass
+        LAI(file_name)
     elif flag == "02":
         pass
     elif flag == "03":
