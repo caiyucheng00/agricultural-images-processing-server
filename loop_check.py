@@ -4,15 +4,22 @@
 # @Time: 2023-11-13 18:02
 #
 import os
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import time
 from FlaskServerUtils import *
 
 data_map = {}
 CHECK_FILE = 'loop_check.txt'
+RESULT_LAI = 'E:/baima/'
+RESULT_EXG = 'E:/baima/'
+RESULT_xiaomaidaofu = 'E:/baima/'
+RESULT_shuidaodaofu = 'E:/baima/'
+RESULT_xiaomaishifei = 'E:/baima/'
+RESULT_shuidaoshifei = 'E:/baima/'
 RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
 RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
 RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
+
 
 ##======================================================================================================================
 def LAI(file_name):
@@ -21,6 +28,7 @@ def LAI(file_name):
     Path(source).mkdir(parents=True, exist_ok=True)
     Path(project).mkdir(parents=True, exist_ok=True)
 
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
     update_dir(source)  # 每次清空
     unzip(file_name, "data_flask", "flask_LAI")
 
@@ -54,6 +62,8 @@ def LAI(file_name):
         plt.savefig(LAI_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
         plt.close()
 
+    dst_dir = RESULT_LAI
+    zip("static/result_LAI/index", dst_dir, "result_" + flag_name)
 
 
 def NDVI(file_name):
@@ -61,15 +71,248 @@ def NDVI(file_name):
 
 
 def EXG(file_name):
-    pass
+    source = "data_flask/flask_EXG"
+    project = "static/result_EXG/index"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir(source)  # 每次清空
+    unzip(file_name, "data_flask", "flask_EXG")
+
+    for img in os.listdir(source):
+        image = cv2.imread(source + os.sep + img, cv2.IMREAD_COLOR)
+        img1 = np.array(image, dtype='int')  # 转换成int型，不然会导致数据溢出
+        # 超绿灰度图
+        r, g, b = cv2.split(img1)
+        # ExG_sub = cv2.subtract(2*g,r)
+        # ExG = cv2.subtract(ExG_sub,b )
+        ExG = 2 * g - r - b
+        [m, n] = ExG.shape
+
+        for i in range(m):
+            for j in range(n):
+                if ExG[i, j] < 0:
+                    ExG[i, j] = 0
+                elif ExG[i, j] > 255:
+                    ExG[i, j] = 255
+
+        ExG = np.array(ExG, dtype='uint8')  # 重新转换成uint8类型
+        ret2, th2 = cv2.threshold(ExG, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        plt.subplot(132), plt.imshow(cv2.cvtColor(ExG, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        exg_path = project + os.sep + "result_" + str(img)
+        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        img2 = plt.imread(exg_path)
+        img_s2 = img2[:, :, 0]  # 直接读入的img为3通道，这里用直接赋值的方法转为单通道
+        sc2 = plt.imshow(img_s2)
+        sc2.set_cmap('nipy_spectral')  # 这里可以设置多种模式
+        plt.colorbar()  # 显示色度条
+        # plt.rcParams['axes.unicode_minus'] = False
+        # plt.title(u'光谱指数模型')
+        plt.title('EXG')
+        plt.axis('off')
+        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
+        plt.close()
+
+    dst_dir = RESULT_EXG
+    zip("static/result_EXG/index", dst_dir, "result_" + flag_name)
 
 
-def daofu(file_name):
-    pass
+def xiaomaidaofu(file_name):
+    source = "data_flask/flask_xiaomaidaofu"
+    project = "static/result_xiaomaidaofu/index"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir(source)  # 每次清空
+    unzip(file_name, "data_flask", "flask_xiaomaidaofu")
+
+    for img in os.listdir(source):
+        # 读取原始图像的信息
+        img0 = cv2.imread(source + os.sep + img)  # 读取图像
+        img1 = cv2.resize(img0, fx=0.9, fy=0.9, dsize=None)  # 调整图像大小
+        img2 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)  # 将图像转化为灰度图
+
+        height = img1.shape[0]  # shape[0] 图像第一维度，高度
+        width = img1.shape[1]  # shape[1] 图像第二维度，宽度
+        plt.rcParams['font.family'] = 'SimHei'
+        img11 = img2[0:-1:10, 0:-1:10]
+        blur = cv2.blur(img11, (3, 3))  # 取3*3的矩阵 一般取奇数矩阵 均值滤波
+
+        median = cv2.medianBlur(blur, 5)  # 中值滤波
+        median1 = np.array(median, dtype='uint8')
+        ret2, th2 = cv2.threshold(median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        sc = plt.imshow(th2, 'gray')
+        sc.set_cmap('rainbow')  # 这里可以设置多种模式
+        plt.colorbar()  # 显示色度条
+        plt.xticks([]), plt.yticks([])
+
+        save_path = project + os.sep + "result_" + str(img)
+        plt.savefig(save_path, dpi=200, bbox_inches='tight', pad_inches=0.1)
+        plt.close()
+
+    dst_dir = RESULT_xiaomaidaofu
+    zip("static/result_xiaomaidaofu/index", dst_dir, "result_" + flag_name)
 
 
-def shifei(file_name):
-    pass
+def shuidaodaofu(file_name):
+    source = "data_flask/flask_shuidaodaofu"
+    project = "static/result_shuidaodaofu/index"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir(source)  # 每次清空
+    unzip(file_name, "data_flask", "flask_shuidaodaofu")
+
+    for img in os.listdir(source):
+        # 读取原始图像的信息
+        img0 = cv2.imread(source + os.sep + img)  # 读取图像
+        img1 = cv2.resize(img0, fx=0.9, fy=0.9, dsize=None)  # 调整图像大小
+        img2 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)  # 将图像转化为灰度图
+
+        height = img1.shape[0]  # shape[0] 图像第一维度，高度
+        width = img1.shape[1]  # shape[1] 图像第二维度，宽度
+        plt.rcParams['font.family'] = 'SimHei'
+        img11 = img2[0:-1:10, 0:-1:10]
+        blur = cv2.blur(img11, (3, 3))  # 取3*3的矩阵 一般取奇数矩阵 均值滤波
+
+        median = cv2.medianBlur(blur, 5)  # 中值滤波
+        median1 = np.array(median, dtype='uint8')
+        ret2, th2 = cv2.threshold(median, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        sc = plt.imshow(th2, 'gray')
+        sc.set_cmap('rainbow')  # 这里可以设置多种模式
+        plt.colorbar()  # 显示色度条
+        plt.xticks([]), plt.yticks([])
+
+        save_path = project + os.sep + "result_" + str(img)
+        plt.savefig(save_path, dpi=200, bbox_inches='tight', pad_inches=0.1)
+        plt.close()
+
+    dst_dir = RESULT_shuidaodaofu
+    zip("static/result_shuidaodaofu/index", dst_dir, "result_" + flag_name)
+
+
+def xiaomaishifei(file_name):
+    source = "data_flask/flask_xiaomaishifei"
+    project = "static/result_xiaomaishifei/index"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir(source)  # 每次清空
+    unzip(file_name, "data_flask", "flask_xiaomaishifei")
+
+    for img in os.listdir(source):
+        image = cv2.imread(source + os.sep + img, cv2.IMREAD_COLOR)
+        img1 = np.array(image, dtype='int')  # 转换成int型，不然会导致数据溢出
+        # 超绿灰度图
+        r, g, b = cv2.split(img1)
+        # ExG_sub = cv2.subtract(2*g,r)
+        # ExG = cv2.subtract(ExG_sub,b )
+        ExG = 2 * g - r - b
+        # shifei = (MAXExg - Exg) / (MAXExg * shifeizongliang * proportion)
+        [m, n] = ExG.shape
+
+        for i in range(m):
+            for j in range(n):
+                if ExG[i, j] < 0:
+                    ExG[i, j] = 0
+                elif ExG[i, j] > 255:
+                    ExG[i, j] = 255
+        ExG1 = np.array(ExG, dtype='uint8')
+        MAXExg = 2
+        shifeizongliang = 100
+        proportion = 0.3
+        shifei2 = (270 - ExG1) / (MAXExg * shifeizongliang * proportion)
+        ExG11 = np.array(shifei2, dtype='uint8')  # 重新转换成uint8类型
+        # shifei2 = (MAXExg - ExG) / (MAXExg * shifeizongliang * proportion)
+        # ret2, th2 = cv2.threshold(ExG11, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # cv2.imshow('s',ExG11)
+        # cv2.waitKey(0)
+        plt.subplot(132), plt.imshow(cv2.cvtColor(ExG11, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        exg_path = project + os.sep + "result_" + str(img)
+        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        img2 = plt.imread(exg_path)
+        img_s2 = img2[:, :, 0]  # 直接读入的img为3通道，这里用直接赋值的方法转为单通道
+        sc2 = plt.imshow(ExG11)
+        sc2.set_cmap('nipy_spectral')  # 这里可以设置多种模式
+        plt.colorbar()  # 显示色度条
+        # plt.rcParams['axes.unicode_minus'] = False
+        # plt.title(u'光谱指数模型')
+        plt.title('chufang')
+        plt.axis('off')
+        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
+        plt.close()
+
+    dst_dir = RESULT_xiaomaishifei
+    zip("static/result_xiaomaishifei/index", dst_dir, "result_" + flag_name)
+
+
+def shuidaoshifei(file_name):
+    source = "data_flask/flask_shuidaoshifei"
+    project = "static/result_shuidaoshifei/index"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir(source)  # 每次清空
+    unzip(file_name, "data_flask", "flask_shuidaoshifei")
+
+    for img in os.listdir(source):
+        image = cv2.imread(source + os.sep + img, cv2.IMREAD_COLOR)
+        img1 = np.array(image, dtype='int')  # 转换成int型，不然会导致数据溢出
+        # 超绿灰度图
+        r, g, b = cv2.split(img1)
+        # ExG_sub = cv2.subtract(2*g,r)
+        # ExG = cv2.subtract(ExG_sub,b )
+        ExG = 2 * g - r - b
+        # shifei = (MAXExg - Exg) / (MAXExg * shifeizongliang * proportion)
+        [m, n] = ExG.shape
+
+        for i in range(m):
+            for j in range(n):
+                if ExG[i, j] < 0:
+                    ExG[i, j] = 0
+                elif ExG[i, j] > 255:
+                    ExG[i, j] = 255
+        ExG1 = np.array(ExG, dtype='uint8')
+        MAXExg = 2
+        shifeizongliang = 100
+        proportion = 0.3
+        shifei2 = (270 - ExG1) / (MAXExg * shifeizongliang * proportion)
+        ExG11 = np.array(shifei2, dtype='uint8')  # 重新转换成uint8类型
+        # shifei2 = (MAXExg - ExG) / (MAXExg * shifeizongliang * proportion)
+        # ret2, th2 = cv2.threshold(ExG11, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+        # cv2.imshow('s',ExG11)
+        # cv2.waitKey(0)
+        plt.subplot(132), plt.imshow(cv2.cvtColor(ExG11, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        exg_path = project + os.sep + "result_" + str(img)
+        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        img2 = plt.imread(exg_path)
+        img_s2 = img2[:, :, 0]  # 直接读入的img为3通道，这里用直接赋值的方法转为单通道
+        sc2 = plt.imshow(ExG11)
+        sc2.set_cmap('nipy_spectral')  # 这里可以设置多种模式
+        plt.colorbar()  # 显示色度条
+        # plt.rcParams['axes.unicode_minus'] = False
+        # plt.title(u'光谱指数模型')
+        plt.title('chufang')
+        plt.axis('off')
+        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
+        plt.close()
+
+    dst_dir = RESULT_shuidaoshifei
+    zip("static/result_shuidaoshifei/index", dst_dir, "result_" + flag_name)
 
 
 def spike(file_name):
@@ -151,15 +394,15 @@ def do_request(file_name, flag):
     elif flag == "02":
         pass
     elif flag == "03":
-        pass
+        EXG(file_name)
     elif flag == "04":
-        pass
+        xiaomaidaofu(file_name)
     elif flag == "05":
-        pass
+        shuidaodaofu(file_name)
     elif flag == "06":
-        pass
+        xiaomaishifei(file_name)
     elif flag == "07":
-        pass
+        shuidaoshifei(file_name)
     elif flag == "08":
         spike(file_name)
     elif flag == "09":
