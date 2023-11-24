@@ -7,9 +7,12 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import time
 from FlaskServerUtils import *
+from osgeo import gdal
+import matplotlib
+matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 
 data_map = {}
-CHECK_FILE = '/root/Downloads/upload/upload.txt'
+CHECK_FILE = 'loop_check.txt'
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
@@ -81,44 +84,105 @@ def EXG(file_name):
     unzip(file_name, "data_flask", "flask_EXG")
 
     for img in os.listdir(source):
-        image = cv2.imread(source + os.sep + img, cv2.IMREAD_COLOR)
-        img1 = np.array(image, dtype='int')  # 转换成int型，不然会导致数据溢出
-        # 超绿灰度图
-        r, g, b = cv2.split(img1)
-        # ExG_sub = cv2.subtract(2*g,r)
-        # ExG = cv2.subtract(ExG_sub,b )
+        # image = cv2.imread(source + os.sep + img, cv2.IMREAD_COLOR)
+        # img1 = np.array(image, dtype='int')  # 转换成int型，不然会导致数据溢出
+        # # 超绿灰度图
+        # r, g, b = cv2.split(img1)
+        # ExG = 2 * g - r - b
+        # [m, n] = ExG.shape
+        #
+        # for i in range(m):
+        #     for j in range(n):
+        #         if ExG[i, j] < 0:
+        #             ExG[i, j] = 0
+        #         elif ExG[i, j] > 255:
+        #             ExG[i, j] = 255
+        #
+        # ExG = np.array(ExG, dtype='uint8')  # 重新转换成uint8类型
+        # ret2, th2 = cv2.threshold(ExG, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        #
+        # plt.subplot(132), plt.imshow(cv2.cvtColor(ExG, cv2.COLOR_BGR2RGB))
+        # plt.axis('off')
+        # exg_path = project + os.sep + "result_" + str(img)
+        # plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0)
+        # plt.close()
+        #
+        # img2 = plt.imread(exg_path)
+        # img_s2 = img2[:, :, 0]  # 直接读入的img为3通道，这里用直接赋值的方法转为单通道
+        # sc2 = plt.imshow(img_s2)
+        # sc2.set_cmap('nipy_spectral')  # 这里可以设置多种模式
+        # plt.colorbar()  # 显示色度条
+        # plt.title('EXG')
+        # plt.axis('off')
+        # plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
+        # plt.close()
+
+        # 打开原始图像文件
+        dataset = gdal.Open(source + os.sep + img, gdal.GA_ReadOnly)
+        if dataset is None:
+            print("无法打开文件")
+            exit(-1)
+        # 获取原始图像的宽度和高度
+        width = dataset.RasterXSize
+        height = dataset.RasterYSize
+        # 定义裁剪的左上角和右下角坐标（这里是裁剪宽高各占原图的70%，即原图中间部分）
+        left = int(width * 0.15)
+        top = int(height * 0.15)
+        right = int(width * 0.85)
+        bottom = int(height * 0.85)
+        # 计算裁剪后图像的宽度和高度
+        new_width = right - left
+        new_height = bottom - top
+        # 读取原始图像数据
+        data = dataset.ReadAsArray(left, top, new_width, new_height)
+        # 数据类型转换到浮点型并归一化到 0-1 范围内
+        data = data.astype(np.float32) / 255.0
+
+        # 计算 ExG
+        r, g, b = data[0], data[1], data[2]
         ExG = 2 * g - r - b
-        [m, n] = ExG.shape
+        # 将 ExG 值限制在 0 到 1 之间
+        ExG = np.clip(ExG, 0, 1)
+        # 创建一个彩色映射
+        cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
+        ExG_color = (cmap(ExG) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
 
-        for i in range(m):
-            for j in range(n):
-                if ExG[i, j] < 0:
-                    ExG[i, j] = 0
-                elif ExG[i, j] > 255:
-                    ExG[i, j] = 255
+        # 创建输出图像
+        driver = gdal.GetDriverByName("GTiff")
+        out_dataset = driver.Create(project + os.sep + str(img), new_width, new_height, 3, gdal.GDT_Byte)
+        if out_dataset is None:
+            print("无法创建输出文件")
+            exit(-1)
 
-        ExG = np.array(ExG, dtype='uint8')  # 重新转换成uint8类型
-        ret2, th2 = cv2.threshold(ExG, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # 将地理空间信息设置到输出图像中
+        geotransform = list(dataset.GetGeoTransform())
+        geotransform[0] = geotransform[0] + left * geotransform[1]
+        geotransform[3] = geotransform[3] + top * geotransform[5]
+        out_dataset.SetGeoTransform(tuple(geotransform))
+        out_dataset.SetProjection(dataset.GetProjection())
 
-        plt.subplot(132), plt.imshow(cv2.cvtColor(ExG, cv2.COLOR_BGR2RGB))
-        plt.axis('off')
-        exg_path = project + os.sep + "result_" + str(img)
-        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0)
-        plt.close()
-        img2 = plt.imread(exg_path)
-        img_s2 = img2[:, :, 0]  # 直接读入的img为3通道，这里用直接赋值的方法转为单通道
-        sc2 = plt.imshow(img_s2)
-        sc2.set_cmap('nipy_spectral')  # 这里可以设置多种模式
-        plt.colorbar()  # 显示色度条
-        # plt.rcParams['axes.unicode_minus'] = False
-        # plt.title(u'光谱指数模型')
-        plt.title('EXG')
-        plt.axis('off')
-        plt.savefig(exg_path, dpi=800, bbox_inches='tight', pad_inches=0.2)
-        plt.close()
+        # 写入颜色数据到输出图像的对应波段
+        for i in range(3):
+            out_band = out_dataset.GetRasterBand(i + 1)
+            out_band.WriteArray(ExG_color[:, :, i])
 
-    dst_dir = RESULT_EXG
-    zip("static/result_EXG/index", dst_dir, "result_" + flag_name)
+        # 创建一个空的 Matplotlib 图像
+        fig, ax = plt.subplots(figsize=(6, 6))
+        # 在图像上显示 ExG_color 数据
+        img = ax.imshow(ExG_color)
+        # 添加彩色图例条
+        cbar = plt.colorbar(img, ax=ax)
+        cbar.set_label('ExG')
+        # 隐藏坐标轴
+        ax.axis('off')
+        # 保存图像
+        plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+        # 关闭数据集
+        dataset = None
+        out_dataset = None
+
+    # dst_dir = RESULT_EXG
+    # zip("static/result_EXG/index", dst_dir, "result_" + flag_name)
 
 
 def xiaomaidaofu(file_name):
