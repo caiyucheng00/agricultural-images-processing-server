@@ -79,6 +79,37 @@ def zip(detect_path, destination_folder, zip_file_name):
     shutil.rmtree(detect_path)
 
 
+# 实现均值滤波
+def mean_filter(image, kernel_size):
+    rows, cols = image.shape
+    kernel = np.ones((kernel_size, kernel_size)) / (kernel_size ** 2)
+    filtered_image = np.zeros_like(image)
+    for i in range(rows - kernel_size + 1):
+        for j in range(cols - kernel_size + 1):
+            image_patch = image[i:i + kernel_size, j:j + kernel_size]
+            filtered_image[i + kernel_size // 2, j + kernel_size // 2] = np.sum(image_patch * kernel)
+    return filtered_image
+
+
+# 实现中值滤波
+def median_filter(image, kernel_size):
+    rows, cols = image.shape
+    filtered_image = np.zeros_like(image)
+    for i in range(rows - kernel_size + 1):
+        for j in range(cols - kernel_size + 1):
+            image_patch = image[i:i + kernel_size, j:j + kernel_size]
+            median_value = np.median(image_patch)
+            filtered_image[i + kernel_size // 2, j + kernel_size // 2] = median_value
+    return filtered_image
+
+
+# 阈值处理
+def threshold(image):
+    threshold_value = np.mean(image)
+    thresholded_image = np.where(image > threshold_value, 255, 0)
+    return thresholded_image
+
+
 # 根据url下载图片
 def url_save(url, filename):
     req = url_request.Request(url, headers={
