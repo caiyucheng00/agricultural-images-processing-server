@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 
 data_map = {}
-CHECK_FILE = 'loop_check.txt'
+CHECK_FILE = ''
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
