@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 
 data_map = {}
-CHECK_FILE = ''
+CHECK_FILE = '/root/Downloads/upload/upload.txt'
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
@@ -140,9 +140,9 @@ def LAI(file_name):
         # 关闭数据集
         dataset = None
         out_dataset = None
-    #
-    # dst_dir = RESULT_LAI
-    # zip("static/result_LAI/index", dst_dir, "result_" + flag_name)
+
+    dst_dir = RESULT_LAI
+    zip("static/result_LAI/index", dst_dir, "result_" + flag_name)
 
 
 def NDVI(file_name):
@@ -267,8 +267,8 @@ def EXG(file_name):
         dataset = None
         out_dataset = None
 
-    # dst_dir = RESULT_EXG
-    # zip("static/result_EXG/index", dst_dir, "result_" + flag_name)
+    dst_dir = RESULT_EXG
+    zip("static/result_EXG/index", dst_dir, "result_" + flag_name)
 
 
 def xiaomaidaofu(file_name):
@@ -381,8 +381,8 @@ def xiaomaidaofu(file_name):
         dataset = None
         out_dataset = None
 
-    # dst_dir = RESULT_xiaomaidaofu
-    # zip("static/result_xiaomaidaofu/index", dst_dir, "result_" + flag_name)
+    dst_dir = RESULT_xiaomaidaofu
+    zip("static/result_xiaomaidaofu/index", dst_dir, "result_" + flag_name)
 
 
 def shuidaodaofu(file_name):
@@ -625,8 +625,8 @@ def xiaomaishifei(file_name):
         dataset = None
         out_dataset = None
 
-    # dst_dir = RESULT_xiaomaishifei
-    # zip("static/result_xiaomaishifei/index", dst_dir, "result_" + flag_name)
+    dst_dir = RESULT_xiaomaishifei
+    zip("static/result_xiaomaishifei/index", dst_dir, "result_" + flag_name)
 
 
 def shuidaoshifei(file_name):
