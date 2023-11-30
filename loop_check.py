@@ -573,20 +573,20 @@ def xiaomaishifei(file_name):
         else:
             data = dataset.ReadAsArray(0, 0, width, height)
         # 数据类型转换到浮点型并归一化到 0-255 范围内
-        data = data.astype(np.float32) /255.0
+        data = data.astype(np.float32)
 
         # 计算 ExG
         r, g, b = data[0], data[1], data[2]
         ExG = 2 * g - r - b
         # 将 ExG 值限制在 0 到 1 之间
-        ExG = np.clip(ExG, 0, 1)
-        MAXExg = 2
+        ExG = np.clip(ExG, 0, 255)
+        MAXExg = 200
         shifeizongliang = 100
         proportion = 0.3
         shifei = (270 - ExG) / (MAXExg * shifeizongliang * proportion)
         # 创建一个彩色映射
-        cmap = plt.cm.Greens  # 选择彩色映射，nipy_spectral
-        ExG_color = (cmap(ExG) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
+        cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
+        ExG_color = (cmap(shifei) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
 
         # 创建输出图像
         driver = gdal.GetDriverByName("GTiff")
@@ -710,20 +710,20 @@ def shuidaoshifei(file_name):
         else:
             data = dataset.ReadAsArray(0, 0, width, height)
         # 数据类型转换到浮点型并归一化到 0-255 范围内
-        data = data.astype(np.float32) / 255.0
+        data = data.astype(np.float32)
 
         # 计算 ExG
         r, g, b = data[0], data[1], data[2]
         ExG = 2 * g - r - b
         # 将 ExG 值限制在 0 到 1 之间
-        ExG = np.clip(ExG, 0, 1)
-        MAXExg = 2
+        ExG = np.clip(ExG, 0, 2550000000000000000000000)
+        MAXExg = 200
         shifeizongliang = 100
         proportion = 0.3
         shifei = (270 - ExG) / (MAXExg * shifeizongliang * proportion)
         # 创建一个彩色映射
-        cmap = plt.cm.Greens  # 选择彩色映射，nipy_spectral
-        ExG_color = (cmap(ExG) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
+        cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
+        ExG_color = (cmap(shifei) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
 
         # 创建输出图像
         driver = gdal.GetDriverByName("GTiff")
