@@ -716,7 +716,7 @@ def shuidaoshifei(file_name):
         r, g, b = data[0], data[1], data[2]
         ExG = 2 * g - r - b
         # 将 ExG 值限制在 0 到 1 之间
-        ExG = np.clip(ExG, 0, 2550000000000000000000000)
+        ExG = np.clip(ExG, 0, 255)
         MAXExg = 200
         shifeizongliang = 100
         proportion = 0.3
