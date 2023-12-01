@@ -11,9 +11,10 @@ from osgeo import gdal
 from scipy.ndimage import zoom
 import matplotlib
 matplotlib.use('TkAgg')  # 切换后端为 TkAgg
+import traceback
 
 data_map = {}
-CHECK_FILE = '/root/Downloads/upload/upload.txt'
+CHECK_FILE = 'upload.txt'
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
@@ -888,7 +889,7 @@ def update_data_map(new_data):
     return new_data_map
 
 
-def check_for_changes(filename):
+def check_for_changes(filename, check_time):
     while True:
         data = read_file(filename)
         new_lines = [line for line in data if line.split()[0] not in data_map]
@@ -897,15 +898,29 @@ def check_for_changes(filename):
             data_map.update(new_data_map)
             ## 取出更新内容
             if new_data_map:
-                for key, value in new_data_map.items():
-                    do_request(key, value)  ## 新数据
+                for idx, (key, value) in enumerate(new_data_map.items()):
+                    try:
+                        do_request(key, value)  ## 新数据
+                    except Exception as e:
+                        data_map.pop(key)       ## 报错从data_map删除
+                        with open(filename, 'r') as file: ## 报错从upload.txt删除
+                            lines = file.readlines()
+                        with open(filename, 'w') as file:
+                            for line in lines:
+                                if new_lines[idx] != line:
+                                    file.write(line)
+                        # 将异常信息写入到文件中
+                        with open("error_log.txt", "a", encoding='utf-8') as file:
+                            file.write(f"Exception occurred: {str(e)}\n")
+                            file.write("\n")
+
         else:
             print("文件没有新增行数")
 
-        time.sleep(10)
-        print("过了10s")
+        time.sleep(check_time)
+        print("监控时长 {}s".format(check_time))
 
 
 if __name__ == '__main__':
     # 启动文件监控
-    check_for_changes(CHECK_FILE)
+    check_for_changes(CHECK_FILE, 10)
