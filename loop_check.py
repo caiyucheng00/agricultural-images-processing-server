@@ -4,6 +4,10 @@
 # @Time: 2023-11-13 18:02
 #
 import os
+
+import numpy
+import numpy as np
+
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import time
 from FlaskServerUtils import *
@@ -14,7 +18,7 @@ matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 import traceback
 
 data_map = {}
-CHECK_FILE = 'upload.txt'
+CHECK_FILE = '/root/Downloads/upload/upload.txt'
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
@@ -100,7 +104,7 @@ def LAI(file_name):
         ExR = 1.4 * r - g
         LAI = 4.297 * np.exp(-6.09 * 1.4 * r - g)
         # 将 LAI 值限制在 0 到 1 之间
-        LAI = np.clip(LAI, 0, 1)
+        #LAI = np.clip(LAI, 0, 1)
         # 创建一个彩色映射
         cmap = plt.cm.plasma  # 选择彩色映射，nipy_spectral
         LAI_color = (cmap(LAI) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
@@ -133,11 +137,19 @@ def LAI(file_name):
         img_ax = ax.imshow(LAI_color)
         # 添加彩色图例条
         cbar = plt.colorbar(img_ax, ax=ax)
+
+        # ��������������������
+        ticks = cbar.get_ticks()
+        # set label value
+        new_labels = ['0', str(np.max(LAI)/6*2)[0:3],str(np.max(LAI)/6*3)[0:3],str(np.max(LAI)/6*4)[0:3],
+                      str(np.max(LAI)/6*5)[0:3],str(np.max(LAI)/6*6)[0:3]]
+        cbar.set_ticklabels(new_labels)
         cbar.set_label('LAI')
         # 隐藏坐标轴
         ax.axis('off')
         # 保存图像
         plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+        plt.close()
         # 关闭数据集
         dataset = None
         out_dataset = None
@@ -226,7 +238,7 @@ def EXG(file_name):
         r, g, b = data[0], data[1], data[2]
         ExG = 2 * g - r - b
         # 将 ExG 值限制在 0 到 1 之间
-        ExG = np.clip(ExG, 0, 1)
+        #ExG = np.clip(ExG, 0, 1)
         # 创建一个彩色映射
         cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
         ExG_color = (cmap(ExG) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
@@ -259,11 +271,17 @@ def EXG(file_name):
         img_ax = ax.imshow(ExG_color)
         # 添加彩色图例条
         cbar = plt.colorbar(img_ax, ax=ax)
+        ticks = cbar.get_ticks()
+        # set label value
+        new_labels = ['0', str(np.max(ExG)/6*2)[0:3],str(np.max(ExG)/6*3)[0:3],str(np.max(ExG)/6*4)[0:3],
+                      str(np.max(ExG)/6*5)[0:3],str(np.max(ExG)/6*6)[0:3]]
+        cbar.set_ticklabels(new_labels)
         cbar.set_label('ExG')
         # 隐藏坐标轴
         ax.axis('off')
         # 保存图像
         plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+        plt.close()
         # 关闭数据集
         dataset = None
         out_dataset = None
@@ -350,7 +368,8 @@ def xiaomaidaofu(file_name):
 
         # 创建输出图像
         driver = gdal.GetDriverByName("GTiff")
-        out_dataset = driver.Create(project + os.sep + str(img), upsampled_data.shape[1], upsampled_data.shape[0], 3, gdal.GDT_Byte)
+        out_dataset = driver.Create(project + os.sep + str(img), upsampled_data.shape[1], upsampled_data.shape[0], 3,
+                                    gdal.GDT_Byte)
         if out_dataset is None:
             print("无法创建输出文件")
             exit(-1)
@@ -371,13 +390,24 @@ def xiaomaidaofu(file_name):
         fig, ax = plt.subplots(figsize=(6, 6))
         # 在图像上显示 ExG_color 数据
         img_ax = ax.imshow(color)
+
+        # create JPG with legend
+        legend_labels = ['No Lodging', 'Lodging']
+        colors = ['purple', 'red']
+        patches = [
+            plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=colors[i], markersize=10,
+                       label=legend_labels[i])
+            for i in range(len(colors))]
+        plt.legend(handles=patches, loc='upper right')
+
         # 添加彩色图例条
-        cbar = plt.colorbar(img_ax, ax=ax)
-        cbar.set_label('ExG')
+        #cbar = plt.colorbar(img_ax, ax=ax)
+        #cbar.set_label('daofu')
         # 隐藏坐标轴
         ax.axis('off')
         # 保存图像
         plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+        plt.close()
         # 关闭数据集
         dataset = None
         out_dataset = None
@@ -482,17 +512,28 @@ def shuidaodaofu(file_name):
             out_band = out_dataset.GetRasterBand(i + 1)
             out_band.WriteArray(color[:, :, i])
 
-        # 创建一个空的 Matplotlib 图像
-        fig, ax = plt.subplots(figsize=(6, 6))
-        # 在图像上显示 ExG_color 数据
-        img_ax = ax.imshow(color)
-        # 添加彩色图例条
-        cbar = plt.colorbar(img_ax, ax=ax)
-        cbar.set_label('ExG')
-        # 隐藏坐标轴
-        ax.axis('off')
-        # 保存图像
-        plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+            # 创建一个空的 Matplotlib 图像
+            fig, ax = plt.subplots(figsize=(6, 6))
+            # 在图像上显示 ExG_color 数据
+            img_ax = ax.imshow(color)
+
+            # create JPG with legend
+            legend_labels = ['No Lodging', 'Lodging']
+            colors = ['purple', 'red']
+            patches = [
+                plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=colors[i], markersize=10,
+                           label=legend_labels[i])
+                for i in range(len(colors))]
+            plt.legend(handles=patches, loc='upper right')
+
+            # 添加彩色图例条
+            # cbar = plt.colorbar(img_ax, ax=ax)
+            # cbar.set_label('daofu')
+            # 隐藏坐标轴
+            ax.axis('off')
+            # 保存图像
+            plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+            plt.close()
         # 关闭数据集
         dataset = None
         out_dataset = None
@@ -583,7 +624,7 @@ def xiaomaishifei(file_name):
         ExG = np.clip(ExG, 0, 255)
         MAXExg = 200
         shifeizongliang = 100
-        proportion = 0.3
+        proportion = 0.1
         shifei = (270 - ExG) / (MAXExg * shifeizongliang * proportion)
         # 创建一个彩色映射
         cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
@@ -617,11 +658,19 @@ def xiaomaishifei(file_name):
         img_ax = ax.imshow(ExG_color)
         # 添加彩色图例条
         cbar = plt.colorbar(img_ax, ax=ax)
-        cbar.set_label('ExG')
+
+        # ��������������������
+        ticks = cbar.get_ticks()
+        # set label value
+        new_labels = ['0', str(np.max(shifei)/6*2)[0:4],str(np.max(shifei)/6*3)[0:4],str(np.max(shifei)/6*4)[0:4],
+                      str(np.max(shifei)/6*5)[0:4],str(np.max(shifei)/6*6)[0:4]]
+        cbar.set_ticklabels(new_labels)
+        cbar.set_label('g/kg')
         # 隐藏坐标轴
         ax.axis('off')
         # 保存图像
         plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+        plt.close()
         # 关闭数据集
         dataset = None
         out_dataset = None
@@ -720,7 +769,7 @@ def shuidaoshifei(file_name):
         ExG = np.clip(ExG, 0, 255)
         MAXExg = 200
         shifeizongliang = 100
-        proportion = 0.3
+        proportion = 0.1
         shifei = (270 - ExG) / (MAXExg * shifeizongliang * proportion)
         # 创建一个彩色映射
         cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
@@ -754,11 +803,19 @@ def shuidaoshifei(file_name):
         img_ax = ax.imshow(ExG_color)
         # 添加彩色图例条
         cbar = plt.colorbar(img_ax, ax=ax)
-        cbar.set_label('ExG')
+
+        # ��������������������
+        ticks = cbar.get_ticks()
+        # set label value
+        new_labels = ['0', str(np.max(shifei)/6*2)[0:4],str(np.max(shifei)/6*3)[0:4],str(np.max(shifei)/6*4)[0:4],
+                      str(np.max(shifei)/6*5)[0:4],str(np.max(shifei)/6*6)[0:4]]
+        cbar.set_ticklabels(new_labels)
+        cbar.set_label('g/kg')
         # 隐藏坐标轴
         ax.axis('off')
         # 保存图像
         plt.savefig(project + os.sep + 'axis_' + str(img), bbox_inches='tight')
+        plt.close()
         # 关闭数据集
         dataset = None
         out_dataset = None
@@ -912,6 +969,7 @@ def check_for_changes(filename, check_time):
                         # 将异常信息写入到文件中
                         with open("error_log.txt", "a", encoding='utf-8') as file:
                             file.write(f"Exception occurred: {str(e)}\n")
+                            file.write(f"Exception line: {str(e.__traceback__.tb_lineno)}\n")
                             file.write("\n")
 
         else:
