@@ -28,6 +28,78 @@ def cat2labels(label_encoder, y_cat):
 
 
 ## ---------------------- Dataloaders ---------------------- ##
+## for single
+class Dataset_SingleCNN(data.Dataset):
+    "Characterizes a dataset for PyTorch"
+
+    def __init__(self, data_path, folders, labels, transform=None):
+        "Initialization"
+        self.data_path = data_path
+        self.labels = labels
+        self.folders = folders
+        self.transform = transform
+
+    def __len__(self):
+        "Denotes the total number of samples"
+        return len(self.folders)
+
+    def read_images(self, path, selected_folder, use_transform):
+        img_list = os.listdir(path + os.sep + selected_folder)
+
+        image = Image.open(path + os.sep + selected_folder + os.sep + img_list[0])
+
+        if use_transform is not None:
+            image = use_transform(image)
+
+        X = image
+
+        return X
+
+    def __getitem__(self, index):
+        "Generates one sample of data"
+        # Select sample
+        folder = self.folders[index]
+
+        # Load data
+        X = self.read_images(self.data_path, folder, self.transform)  # (input) spatial images
+        y = torch.LongTensor([self.labels[index]])  # (labels) LongTensor are for int64 instead of FloatTensor
+
+        # print(X.shape)
+        # X = X.permute(1, 0, 2, 3)
+        return X, y  ## (3，224，224） +  （1，）
+
+
+class Dataset_SingleCNN_Detect(data.Dataset):
+    def __init__(self, data_path, images, transform=None):
+        "Initialization"
+        self.data_path = data_path
+        self.images = images
+        self.transform = transform
+
+    def __len__(self):
+        "Denotes the total number of samples"
+        return len(self.images)
+
+    def read_images(self, path, image, use_transform):
+        image = Image.open(path + os.sep + image)
+
+        if use_transform is not None:
+            image = use_transform(image)
+
+        X = image
+
+        return X
+
+    def __getitem__(self, index):
+        # Select sample
+        image = self.images[index]
+        # Load data
+        X = self.read_images(self.data_path, image, self.transform)  # (input) spatial images
+
+        return X  ## (3，224，224）
+
+
+## ---------------------- end of Dataloaders ---------------------- ##
 # for 3DCNN
 class Dataset_3DCNN(data.Dataset):
     "Characterizes a dataset for PyTorch"
@@ -109,6 +181,7 @@ class Dataset_CRNN(data.Dataset):
         y = torch.LongTensor([self.labels[index]])  # (labels) LongTensor are for int64 instead of FloatTensor
 
         # print(X.shape)
+        X = X.permute(1, 0, 2, 3)
         return X, y  ## (28，3，224，224） +  （1，）
 
 
@@ -141,16 +214,26 @@ def CRNN_final_prediction(model, device, loader):
         for batch_idx, (X, y) in enumerate(tqdm(loader)):
             # distribute data to device
             X = X.to(device)
-            output, pre_output = rnn_decoder(cnn_encoder(X))
+            output = rnn_decoder(cnn_encoder(X))
             y_pred = output.max(1, keepdim=True)[1]  # location of max log-probability as prediction
-            pre_y_pred = pre_output.max(1, keepdim=True)[1]  # location of max log-probability as prediction
+            all_y_pred.extend(y_pred.cpu().data.squeeze().numpy().tolist())
 
-            ## 比较并且更新
-            for i in range(y_pred.size(0)):
-                if pre_y_pred[i] > y_pred[i]:
-                    y_pred[i] = min(pre_y_pred[i] + 1, 8)
+    return all_y_pred
 
-    return y_pred
+
+def Single_final_prediction(model, device, loader):
+    model.eval()
+    all_y_pred = []
+    with torch.no_grad():
+        for X in tqdm(loader):
+            # distribute data to device
+            X = X.to(device)
+            output = model(X)
+            y_pred = output.max(1, keepdim=True)[1]  # location of max log-probability as prediction
+            y_pred = y_pred.item() if y_pred.numel() == 1 else y_pred.squeeze().cpu().numpy().tolist()
+            all_y_pred.append(y_pred)
+
+    return all_y_pred
 
 
 ## -------------------- end of model prediction ---------------------- ##
@@ -528,42 +611,28 @@ class ResNet152EncoderSPP(nn.Module):
 
 # 2D CNN encoder using ResNet-18 pretrained
 class ResNet18Encoder(nn.Module):
-    def __init__(self, fc_hidden1=512, fc_hidden2=512, drop_p=0.3, CNN_embed_dim=300):
+    def __init__(self, fc_hidden1=0, fc_hidden2=0, num_classes=9, drop_p=0.3, pretrained=True):
         """Load the pretrained ResNet-152 and replace top fc layer."""
         super(ResNet18Encoder, self).__init__()
 
-        self.fc_hidden1, self.fc_hidden2 = fc_hidden1, fc_hidden2
         self.drop_p = drop_p
+        self.num_classes = num_classes
 
-        resnet = models.resnet18(pretrained=True)
-        modules = list(resnet.children())[:-1]  # delete the last fc layer.
+        resnet = models.resnet18(pretrained=pretrained)
+        modules = list(resnet.children())[:-1] # del the last fc layer.
         self.resnet = nn.Sequential(*modules)
-        self.fc1 = nn.Linear(resnet.fc.in_features, fc_hidden1)
-        self.bn1 = nn.BatchNorm1d(512, momentum=0.01)
-        self.fc2 = nn.Linear(fc_hidden1, fc_hidden2)
-        self.bn2 = nn.BatchNorm1d(fc_hidden2, momentum=0.01)
-        self.fc3 = nn.Linear(fc_hidden2, CNN_embed_dim)
+        self.fc = nn.Linear(512, num_classes, bias=True)
 
-    def forward(self, x_3d):  ##（40,28,3,224,224）
-        cnn_embed_seq = []
-        for t in range(x_3d.size(1)):
-            # ResNet CNN
-            with torch.no_grad():
-                x = self.resnet(x_3d[:, t, :, :, :])  # ResNet    (40,3,224,224) --> (40,512,1,1)
-                x = x.view(x.size(0), -1)  # flatten output of conv  (40,512)
+    def forward(self, x):  ##（b,3,224,224）
+        x = self.resnet(x)  # ResNet    (b,3,224,224) --> (b,512,1,1)
+        x = x.view(x.size(0), -1)  # flatten output of conv  (b,512)
 
             # FC layers
-            x = self.bn1(x)  ## (40,512)
-            x = F.relu(x)
-            x = F.dropout(x, p=self.drop_p, training=self.training)
+        x = self.fc(x)  ## (b,9)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.drop_p, training=self.training)
 
-            cnn_embed_seq.append(x)
-
-        # swap time and sample dim such that (sample dim, time dim, CNN latent dim)
-        cnn_embed_seq = torch.stack(cnn_embed_seq, dim=0).transpose_(0, 1)  ## (40,28,512)
-        # cnn_embed_seq: shape=(batch, time_step, input_size)
-
-        return cnn_embed_seq
+        return x
 
 
 class ResNet18EncoderAdapt(nn.Module):
@@ -667,45 +736,36 @@ class ResNet18EncoderSPP(nn.Module):
 
 # 2D CNN encoder using ResNet-50 pretrained
 class ResNet50Encoder(nn.Module):
-    def __init__(self, fc_hidden1=512, fc_hidden2=512, drop_p=0.3, CNN_embed_dim=300):
+    def __init__(self, fc_hidden1=1024, fc_hidden2=768, drop_p=0.3, num_classes=9, pretrained=True):
         """Load the pretrained ResNet-50 and replace top fc layer."""
         super(ResNet50Encoder, self).__init__()
 
         self.fc_hidden1, self.fc_hidden2 = fc_hidden1, fc_hidden2
         self.drop_p = drop_p
 
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(pretrained=pretrained)
         modules = list(resnet.children())[:-1]  # delete the last fc layer.
         self.resnet = nn.Sequential(*modules)
         self.fc1 = nn.Linear(resnet.fc.in_features, fc_hidden1)
         self.bn1 = nn.BatchNorm1d(fc_hidden1, momentum=0.01)
         self.fc2 = nn.Linear(fc_hidden1, fc_hidden2)
         self.bn2 = nn.BatchNorm1d(fc_hidden2, momentum=0.01)
-        self.fc3 = nn.Linear(fc_hidden2, CNN_embed_dim)
+        self.fc3 = nn.Linear(fc_hidden2, num_classes)
 
-    def forward(self, x_3d):  ##（40,28,3,224,224）
-        cnn_embed_seq = []
-        for t in range(x_3d.size(1)):
-            # ResNet CNN
-            with torch.no_grad():
-                x = self.resnet(x_3d[:, t, :, :, :])  # ResNet    (40,3,224,224) --> (40,2048,1,1)
-                x = x.view(x.size(0), -1)  # flatten output of conv  (40,2048)
+    def forward(self, x):  ##（40,28,3,224,224）
 
-            # FC layers
-            x = self.bn1(self.fc1(x))  ## (40,1024)
-            x = F.relu(x)
-            x = self.bn2(self.fc2(x))  ## (40,768)
-            x = F.relu(x)
-            x = F.dropout(x, p=self.drop_p, training=self.training)
-            x = self.fc3(x)  ## (40,512)
+        x = self.resnet(x)  # ResNet    (b,3,224,224) --> (b,2048,1,1)
+        x = x.view(x.size(0), -1)  # flatten output of conv  (b,2048)
 
-            cnn_embed_seq.append(x)
+        # FC layers
+        x = self.bn1(self.fc1(x))  ## (b,1024)
+        x = F.relu(x)
+        x = self.bn2(self.fc2(x))  ## (b,768)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.drop_p, training=self.training)
+        x = self.fc3(x)  ## (40,9)
 
-        # swap time and sample dim such that (sample dim, time dim, CNN latent dim)
-        cnn_embed_seq = torch.stack(cnn_embed_seq, dim=0).transpose_(0, 1)  ## (40,28,512)
-        # cnn_embed_seq: shape=(batch, time_step, input_size)
-
-        return cnn_embed_seq
+        return x
 
 
 class ResNet50EncoderAdapt(nn.Module):

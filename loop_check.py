@@ -14,11 +14,13 @@ from FlaskServerUtils import *
 from osgeo import gdal
 from scipy.ndimage import zoom
 import matplotlib
+from ResNet_Single_detect import detect_forward
+
 matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 import traceback
 
 data_map = {}
-CHECK_FILE = '/root/Downloads/upload/upload.txt'
+CHECK_FILE = 'upload.txt'
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
@@ -28,6 +30,7 @@ RESULT_shuidaoshifei = '/root/Downloads/result/shuidaoshifei/'
 RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
 RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
 RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
+RESULT_PHE = '/root/Downloads/result/phe/'
 
 
 ##======================================================================================================================
@@ -104,7 +107,7 @@ def LAI(file_name):
         ExR = 1.4 * r - g
         LAI = 4.297 * np.exp(-6.09 * 1.4 * r - g)
         # 将 LAI 值限制在 0 到 1 之间
-        #LAI = np.clip(LAI, 0, 1)
+        # LAI = np.clip(LAI, 0, 1)
         # 创建一个彩色映射
         cmap = plt.cm.plasma  # 选择彩色映射，nipy_spectral
         LAI_color = (cmap(LAI) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
@@ -141,8 +144,8 @@ def LAI(file_name):
         # ��������������������
         ticks = cbar.get_ticks()
         # set label value
-        new_labels = ['0', str(np.max(LAI)/6*2)[0:3],str(np.max(LAI)/6*3)[0:3],str(np.max(LAI)/6*4)[0:3],
-                      str(np.max(LAI)/6*5)[0:3],str(np.max(LAI)/6*6)[0:3]]
+        new_labels = ['0', str(np.max(LAI) / 6 * 2)[0:3], str(np.max(LAI) / 6 * 3)[0:3], str(np.max(LAI) / 6 * 4)[0:3],
+                      str(np.max(LAI) / 6 * 5)[0:3], str(np.max(LAI) / 6 * 6)[0:3]]
         cbar.set_ticklabels(new_labels)
         cbar.set_label('LAI')
         # 隐藏坐标轴
@@ -238,7 +241,7 @@ def EXG(file_name):
         r, g, b = data[0], data[1], data[2]
         ExG = 2 * g - r - b
         # 将 ExG 值限制在 0 到 1 之间
-        #ExG = np.clip(ExG, 0, 1)
+        # ExG = np.clip(ExG, 0, 1)
         # 创建一个彩色映射
         cmap = plt.cm.nipy_spectral  # 选择彩色映射，nipy_spectral
         ExG_color = (cmap(ExG) * 255).astype(np.uint8)  # 将 ExG 值映射为 RGB 彩色空间
@@ -273,8 +276,8 @@ def EXG(file_name):
         cbar = plt.colorbar(img_ax, ax=ax)
         ticks = cbar.get_ticks()
         # set label value
-        new_labels = ['0', str(np.max(ExG)/6*2)[0:3],str(np.max(ExG)/6*3)[0:3],str(np.max(ExG)/6*4)[0:3],
-                      str(np.max(ExG)/6*5)[0:3],str(np.max(ExG)/6*6)[0:3]]
+        new_labels = ['0', str(np.max(ExG) / 6 * 2)[0:3], str(np.max(ExG) / 6 * 3)[0:3], str(np.max(ExG) / 6 * 4)[0:3],
+                      str(np.max(ExG) / 6 * 5)[0:3], str(np.max(ExG) / 6 * 6)[0:3]]
         cbar.set_ticklabels(new_labels)
         cbar.set_label('ExG')
         # 隐藏坐标轴
@@ -401,8 +404,8 @@ def xiaomaidaofu(file_name):
         plt.legend(handles=patches, loc='upper right')
 
         # 添加彩色图例条
-        #cbar = plt.colorbar(img_ax, ax=ax)
-        #cbar.set_label('daofu')
+        # cbar = plt.colorbar(img_ax, ax=ax)
+        # cbar.set_label('daofu')
         # 隐藏坐标轴
         ax.axis('off')
         # 保存图像
@@ -662,8 +665,9 @@ def xiaomaishifei(file_name):
         # ��������������������
         ticks = cbar.get_ticks()
         # set label value
-        new_labels = ['0', str(np.max(shifei)/6*2)[0:4],str(np.max(shifei)/6*3)[0:4],str(np.max(shifei)/6*4)[0:4],
-                      str(np.max(shifei)/6*5)[0:4],str(np.max(shifei)/6*6)[0:4]]
+        new_labels = ['0', str(np.max(shifei) / 6 * 2)[0:4], str(np.max(shifei) / 6 * 3)[0:4],
+                      str(np.max(shifei) / 6 * 4)[0:4],
+                      str(np.max(shifei) / 6 * 5)[0:4], str(np.max(shifei) / 6 * 6)[0:4]]
         cbar.set_ticklabels(new_labels)
         cbar.set_label('g/kg')
         # 隐藏坐标轴
@@ -807,8 +811,9 @@ def shuidaoshifei(file_name):
         # ��������������������
         ticks = cbar.get_ticks()
         # set label value
-        new_labels = ['0', str(np.max(shifei)/6*2)[0:4],str(np.max(shifei)/6*3)[0:4],str(np.max(shifei)/6*4)[0:4],
-                      str(np.max(shifei)/6*5)[0:4],str(np.max(shifei)/6*6)[0:4]]
+        new_labels = ['0', str(np.max(shifei) / 6 * 2)[0:4], str(np.max(shifei) / 6 * 3)[0:4],
+                      str(np.max(shifei) / 6 * 4)[0:4],
+                      str(np.max(shifei) / 6 * 5)[0:4], str(np.max(shifei) / 6 * 6)[0:4]]
         cbar.set_ticklabels(new_labels)
         cbar.set_label('g/kg')
         # 隐藏坐标轴
@@ -894,7 +899,34 @@ def seedling(file_name):
 
 
 def phe(file_name):
-    pass
+    source = "data_flask/flask_phe"
+    project = "static/result_phe/detect"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir("data_flask/flask_phe")  # 每次清空
+    unzip(file_name, "data_flask", "flask_phe")
+
+    # 复制所有文件到目标文件夹
+    files = os.listdir(source)
+    for file_name in files:
+        source_file = os.path.join(source, file_name)
+        destination_file = os.path.join(project, file_name)
+        shutil.copy(source_file, destination_file)
+
+    save_model_path = '.'
+    res_size = 224
+    k = 9
+    labels = ['三叶期', '四叶期', '五叶期', '拔节期', '孕穗期', '抽穗期', '开花期', '灌浆期', '成熟期']
+    all_y_pred = detect_forward(source, save_model_path, res_size, k)
+    txt_name = "static/result_phe/detect/" + flag_name + ".txt"
+    with open(txt_name, 'w+') as file:
+        for y in all_y_pred:
+            file.write(labels[y] + '\n')
+
+    dst_dir = RESULT_PHE
+    zip("static/result_phe/detect", dst_dir, "result_" + flag_name)
 
 
 def do_request(file_name, flag):
@@ -919,7 +951,7 @@ def do_request(file_name, flag):
     elif flag == "10":
         seedling(file_name)
     elif flag == "11":
-        time.sleep(3)
+        phe(file_name)
 
     print(f"图片地址: {file_name}, 做法: {flag}")
     time.sleep(1)
@@ -959,8 +991,8 @@ def check_for_changes(filename, check_time):
                     try:
                         do_request(key, value)  ## 新数据
                     except Exception as e:
-                        data_map.pop(key)       ## 报错从data_map删除
-                        with open(filename, 'r') as file: ## 报错从upload.txt删除
+                        data_map.pop(key)  ## 报错从data_map删除
+                        with open(filename, 'r') as file:  ## 报错从upload.txt删除
                             lines = file.readlines()
                         with open(filename, 'w') as file:
                             for line in lines:

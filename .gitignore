@@ -3,6 +3,7 @@ index_result/
 static/
 upload_images/
 *.pt
+*.pth
 *.txt
 __pycache__/
 *.out
