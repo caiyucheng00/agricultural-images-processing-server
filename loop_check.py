@@ -14,7 +14,7 @@ from FlaskServerUtils import *
 from osgeo import gdal
 from scipy.ndimage import zoom
 import matplotlib
-from ResNet_Single_detect import detect_forward
+from ResNet_Single_detect import *
 
 matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 import traceback
@@ -31,6 +31,7 @@ RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
 RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
 RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
 RESULT_PHE = '/root/Downloads/result/phe/'
+RESULT_SCENE = '/root/Downloads/result/scene/'
 
 
 ##======================================================================================================================
@@ -840,13 +841,14 @@ def spike(file_name):
     unzip(file_name, "data_flask", "flask_spike")
 
     n = yolo_detect(weights=ROOT / 'spike.pt', source=source, project=project)
+    files = os.listdir(source)
     number = []
     for tensor in n:
         number.append(tensor.item())
     txt_name = "static/result_spike/detect/" + flag_name + ".txt"
     with open(txt_name, 'w+') as file:
-        for i in number:
-            file.write(str(i) + '\n')
+        for id, i in enumerate(number):
+            file.write(files[id] + ' ' + str(i) + '\n')
 
     dst_dir = RESULT_SPIKE
     zip("static/result_spike/detect", dst_dir, "result_" + flag_name)
@@ -863,13 +865,14 @@ def rice(file_name):
     unzip(file_name, "data_flask", "flask_rice")
 
     n = yolo_detect(weights=ROOT / 'rice.pt', source=source, project=project)
+    files = os.listdir(source)
     number = []
     for tensor in n:
         number.append(tensor.item())
     txt_name = "static/result_rice/detect/" + flag_name + ".txt"
     with open(txt_name, 'w+') as file:
-        for i in number:
-            file.write(str(i) + '\n')
+        for id, i in enumerate(number):
+            file.write(files[id] + ' ' + str(i) + '\n')
 
     dst_dir = RESULT_RICE
     zip("static/result_rice/detect", dst_dir, "result_" + flag_name)
@@ -886,13 +889,14 @@ def seedling(file_name):
     unzip(file_name, "data_flask", "flask_seedling")
 
     n = yolo_detect(weights=ROOT / 'seedling.pt', source=source, project=project)
+    files = os.listdir(source)
     number = []
     for tensor in n:
         number.append(tensor.item())
     txt_name = "static/result_seedling/detect/" + flag_name + ".txt"
     with open(txt_name, 'w+') as file:
-        for i in number:
-            file.write(str(i) + '\n')
+        for id, i in enumerate(number):
+            file.write(files[id] + ' ' +str(i) + '\n')
 
     dst_dir = RESULT_SEEDLING
     zip("static/result_seedling/detect", dst_dir, "result_" + flag_name)
@@ -919,15 +923,45 @@ def phe(file_name):
     res_size = 224
     k = 9
     labels = ['三叶期', '四叶期', '五叶期', '拔节期', '孕穗期', '抽穗期', '开花期', '灌浆期', '成熟期']
-    all_y_pred = detect_forward(source, save_model_path, res_size, k)
+    all_y_pred = detect_forward_phe(source, save_model_path, res_size, k)
     txt_name = "static/result_phe/detect/" + flag_name + ".txt"
     with open(txt_name, 'w+') as file:
-        for y in all_y_pred:
-            file.write(labels[y] + '\n')
+        for id, y in enumerate(all_y_pred):
+            file.write(files[id] + ' ' + labels[y] + '\n')
 
     dst_dir = RESULT_PHE
     zip("static/result_phe/detect", dst_dir, "result_" + flag_name)
 
+
+def scene(file_name):
+    source = "data_flask/flask_scene"
+    project = "static/result_scene/detect"
+    Path(source).mkdir(parents=True, exist_ok=True)
+    Path(project).mkdir(parents=True, exist_ok=True)
+
+    flag_name = file_name.split(os.sep)[-1].split(".")[0]
+    update_dir("data_flask/flask_scene")  # 每次清空
+    unzip(file_name, "data_flask", "flask_scene")
+
+    # 复制所有文件到目标文件夹
+    files = os.listdir(source)
+    for file_name in files:
+        source_file = os.path.join(source, file_name)
+        destination_file = os.path.join(project, file_name)
+        shutil.copy(source_file, destination_file)
+
+    save_model_path = '.'
+    res_size = 512
+    k = 3
+    labels = ['CCJ', 'GCD', 'QM']
+    all_y_pred = detect_forward_scene(source, save_model_path, res_size, k)
+    txt_name = "static/result_scene/detect/" + flag_name + ".txt"
+    with open(txt_name, 'w+') as file:
+        for id, y in enumerate(all_y_pred):
+            file.write(files[id] + ' ' + labels[y] + '\n')
+
+    dst_dir = RESULT_SCENE
+    zip("static/result_scene/detect", dst_dir, "result_" + flag_name)
 
 def do_request(file_name, flag):
     if flag == "01":
@@ -952,6 +986,8 @@ def do_request(file_name, flag):
         seedling(file_name)
     elif flag == "11":
         phe(file_name)
+    elif flag == "12":
+        scene(file_name)
 
     print(f"图片地址: {file_name}, 做法: {flag}")
     time.sleep(1)

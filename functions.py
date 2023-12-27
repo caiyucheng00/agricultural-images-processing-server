@@ -768,6 +768,40 @@ class ResNet50Encoder(nn.Module):
         return x
 
 
+# Alexnet
+class AlexNetEncoder(nn.Module):
+    def __init__(self, fc_hidden1=1024, fc_hidden2=768, drop_p=0.3, num_classes=9, pretrained=True):
+        """Load the pretrained ResNet-50 and replace top fc layer."""
+        super(AlexNetEncoder, self).__init__()
+
+        self.fc_hidden1, self.fc_hidden2 = fc_hidden1, fc_hidden2
+        self.drop_p = drop_p
+
+        alexnet = models.alexnet(pretrained=pretrained)
+        modules = list(alexnet.children())[:-1]  # delete the last fc layer.
+        self.alexnet = nn.Sequential(*modules)
+        self.fc1 = nn.Linear(256*6*6, fc_hidden1)
+        self.bn1 = nn.BatchNorm1d(fc_hidden1, momentum=0.01)
+        self.fc2 = nn.Linear(fc_hidden1, fc_hidden2)
+        self.bn2 = nn.BatchNorm1d(fc_hidden2, momentum=0.01)
+        self.fc3 = nn.Linear(fc_hidden2, num_classes)
+
+    def forward(self, x):  ##（40,28,3,224,224）
+
+        x = self.alexnet(x)  # ResNet    (b,3,224,224) --> (b,2048,1,1)
+        x = x.view(x.size(0), -1)  # flatten output of conv  (b,2048)
+
+        # FC layers
+        x = self.bn1(self.fc1(x))  ## (b,1024)
+        x = F.relu(x)
+        x = self.bn2(self.fc2(x))  ## (b,768)
+        x = F.relu(x)
+        x = F.dropout(x, p=self.drop_p, training=self.training)
+        x = self.fc3(x)  ## (40,9)
+
+        return x
+
+
 class ResNet50EncoderAdapt(nn.Module):
     def __init__(self, fc_hidden1=512, fc_hidden2=512, drop_p=0.3, CNN_embed_dim=300):
         """Load the pretrained ResNet-152 and replace top fc layer."""
