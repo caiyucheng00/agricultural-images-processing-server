@@ -20,7 +20,7 @@ matplotlib.use('TkAgg')  # 切换后端为 TkAgg
 import traceback
 
 data_map = {}
-CHECK_FILE = 'upload.txt'
+CHECK_FILE = '/root/Downloads/upload/upload.txt'
 RESULT_LAI = '/root/Downloads/result/LAI/'
 RESULT_EXG = '/root/Downloads/result/EXG/'
 RESULT_xiaomaidaofu = '/root/Downloads/result/xiaomaidaofu/'
@@ -30,8 +30,8 @@ RESULT_shuidaoshifei = '/root/Downloads/result/shuidaoshifei/'
 RESULT_SPIKE = '/root/Downloads/result/xiaomaisuishu/'
 RESULT_RICE = '/root/Downloads/result/shuidaosuishu/'
 RESULT_SEEDLING = '/root/Downloads/result/xiaomaimiaoshu/'
-RESULT_PHE = '/root/Downloads/result/phe/'
-RESULT_SCENE = '/root/Downloads/result/scene/'
+RESULT_PHE = '/root/Downloads/result/shengyuqi/'
+RESULT_SCENE = '/root/Downloads/result/changjingshibie/'
 
 
 ##======================================================================================================================
