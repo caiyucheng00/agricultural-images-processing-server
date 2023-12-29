@@ -989,7 +989,7 @@ def do_request(file_name, flag):
     elif flag == "12":
         scene(file_name)
 
-    print(f"图片地址: {file_name}, 做法: {flag}")
+    print(f"图片地址: {file_name}, DONE: {flag}")
     time.sleep(1)
 
 

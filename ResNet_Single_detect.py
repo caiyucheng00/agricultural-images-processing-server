@@ -31,7 +31,7 @@ def detect_forward_phe(data_path, save_model_path, res_size, k):
     # Create model
     resnet = ResNet50Encoder(fc_hidden1=CNN_fc_hidden1, fc_hidden2=CNN_fc_hidden2, num_classes=k,
                              pretrained=False).to(device)
-    resnet.load_state_dict(torch.load(os.path.join(save_model_path, 'phe.pth')))
+    resnet.load_state_dict(torch.load(os.path.join(save_model_path, 'phe.pth'), map_location=torch.device('cpu')))
     print('resnet model reloaded!')
 
     # make all video predictions by reloaded model
@@ -69,7 +69,7 @@ def detect_forward_scene(data_path, save_model_path, res_size, k):
     alexnet = AlexNetEncoder(fc_hidden1=CNN_fc_hidden1, fc_hidden2=CNN_fc_hidden2, num_classes=k,
                              pretrained=False).to(device)
     alexnet = nn.DataParallel(alexnet)
-    check_point = torch.load(os.path.join(save_model_path, 'scene.pth'))
+    check_point = torch.load(os.path.join(save_model_path, 'scene.pth'), map_location=torch.device('cpu'))
     alexnet.load_state_dict(check_point)
     print('alexnet model reloaded!')
 
