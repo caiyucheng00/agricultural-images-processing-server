@@ -1049,4 +1049,4 @@ def check_for_changes(filename, check_time):
 
 if __name__ == '__main__':
     # 启动文件监控
-    check_for_changes(CHECK_FILE, 10)
+    check_for_changes(CHECK_FILE, 11)
